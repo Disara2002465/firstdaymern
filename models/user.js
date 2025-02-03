@@ -30,8 +30,13 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: String,
         required: true
+    },
+    whatsapp:{
+        type : String,
+        required : true
     }
-}, { timestamps: true }); // Adds createdAt & updatedAt
+    }),
+ { timestamps: true }); // Adds createdAt & updatedAt
 
 const User = mongoose.model("User", userSchema);
 export default User;
