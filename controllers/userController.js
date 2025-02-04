@@ -1,6 +1,7 @@
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
 export async function registerUser(req, res) {
   try {
@@ -37,9 +38,10 @@ export async function registerUser(req, res) {
         email: newUser.email,
         role: newUser.role,
       },
-      "kv-secret-891",
-      { expiresIn: "1h" } // Token expires in 1 hour
+      process.env.JWT_SECRET
     );
+
+    "kv-secret-891", { expiresIn: "1h" }; // Token expires in 1 hour
 
     res.status(201).json({ message: "User registered successfully", token });
   } catch (error) {

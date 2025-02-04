@@ -23,7 +23,7 @@ app.use((req, res, next) => {
   if (token) {
     token = token.replace("Bearer ", ""); // ✅ Remove "Bearer " prefix properly
 
-    jwt.verify(token, "kv-secret-891", (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
         return res.status(401).json({ error: "Invalid token" }); // ✅ Stop request if token is invalid
       }
