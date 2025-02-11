@@ -32,12 +32,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    profilePicture: {
+      type: String,
+      required: true,
+      default: "https://www.shutterstock.com/search/default-profile-image",
+    },
   },
-  { timestamps: true }
+  { timestamps: true } // Optional: Adds createdAt and updatedAt timestamps
 );
 
 const User = mongoose.model("User", userSchema);
 export default User;
 
 // "email": "admin@admin.com",
+
 // "password": "secret123", Admin Login

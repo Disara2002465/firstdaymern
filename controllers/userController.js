@@ -39,6 +39,7 @@ export async function registerUser(req, res) {
         lastName: newUser.lastName,
         email: newUser.email,
         role: newUser.role,
+        profilePicture: User.profilePicture,
       },
       process.env.JWT_SECRET
     );
