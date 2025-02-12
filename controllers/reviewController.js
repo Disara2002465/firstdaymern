@@ -28,20 +28,23 @@ export function addReview(req, res) {
 
 // Function to get reviews
 export async function getReviews(req, res) {
-    const user = req.user;
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Please login and try again" });
+    }
 
-    try{
-      if(user.role == "admin"){
-      const reviews = await Review.find();
-      res.json(reviews);
-      }else{
-      const reviews = await Review.find(isApproved:true);
-      res.json(reviews);
-      }
-    )catch(error){
-      res.status(500).json({error: " Failed to get reviews"});
-    }
-    }
+    const reviews =
+      req.user.role === "admin"
+        ? await Review.find()
+        : await Review.find({ isApproved: true });
+
+    res.json(reviews);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to get reviews", details: error.message });
+  }
+}
 
 // Function to delete a review by email
 export function deleteReviews(req, res) {
@@ -52,7 +55,6 @@ export function deleteReviews(req, res) {
   }
 
   if (req.user.role === "admin") {
-    // Admin can delete any review
     return Review.deleteOne({ email })
       .then((result) => {
         if (result.deletedCount === 0) {
@@ -70,7 +72,6 @@ export function deleteReviews(req, res) {
   }
 
   if (req.user.role === "customer") {
-    // Customers can delete only their own reviews
     if (req.user.email !== email) {
       return res
         .status(403)
@@ -102,7 +103,7 @@ export function approveReview(req, res) {
     return res.status(401).json({ message: "Please login and try again" });
   }
 
-  if (req.user.role !== ADMIN_ROLE) {
+  if (req.user.role !== ADMIN_ROLE.ADMIN) {
     return res.status(403).json({ message: "Only admins can approve reviews" });
   }
 

@@ -1,4 +1,5 @@
 import Product from "../models/product.js";
+
 export async function addProduct(req, res) {
   try {
     // ✅ Ensure user is logged in
@@ -13,27 +14,22 @@ export async function addProduct(req, res) {
       });
     }
 
-    console.log("Authenticated Admin:", req.user);
+    const data = req.body;
+    const newProduct = new Product(data);
 
-    // ✅ Validate required fields
-    const { name, price, description } = req.body;
-    if (!name || !price || !description) {
-      return res
-        .status(400)
-        .json({ error: "Missing required fields: name, price, description" });
+    try {
+      await newProduct.save();
+      return res.json({
+        message: "Product registered successfully",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: "Product registration failed",
+      });
     }
-
-    // ✅ Create and save new product
-    const newProduct = new Product({ name, price, description });
-    await newProduct.save();
-
-    res
-      .status(201)
-      .json({ message: "Product added successfully", product: newProduct });
   } catch (error) {
-    console.error("Error adding product:", error);
-    res
-      .status(500)
-      .json({ error: "Product addition failed", details: error.message });
+    return res.status(500).json({
+      error: "An unexpected error occurred",
+    });
   }
 }
