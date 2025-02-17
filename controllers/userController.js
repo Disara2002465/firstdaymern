@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// ✅ Register User
 export async function registerUser(req, res) {
   try {
     const { email, password, firstName, lastName, address, phone, role } =
@@ -39,12 +40,11 @@ export async function registerUser(req, res) {
         lastName: newUser.lastName,
         email: newUser.email,
         role: newUser.role,
-        profilePicture: User.profilePicture,
+        phone: newUser.phone,
       },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET, // ✅ Use environment variable
+      { expiresIn: "1h" }
     );
-
-    "kv-secret-891", { expiresIn: "1h" }; // Token expires in 1 hour
 
     res.status(201).json({ message: "User registered successfully", token });
   } catch (error) {
@@ -54,6 +54,7 @@ export async function registerUser(req, res) {
   }
 }
 
+// ✅ Login User
 export async function loginUser(req, res) {
   try {
     const { email, password } = req.body;
@@ -76,8 +77,9 @@ export async function loginUser(req, res) {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        phone: user.phone,
       },
-      "kv-secret-891",
+      process.env.JWT_SECRET, // ✅ Use environment variable
       { expiresIn: "1h" }
     );
 
@@ -85,4 +87,14 @@ export async function loginUser(req, res) {
   } catch (error) {
     res.status(500).json({ error: "Login failed", details: error.message });
   }
+}
+
+// ✅ Check if User is Admin
+export function isItAdmin(req) {
+  return req.user && req.user.role === "Admin";
+}
+
+// ✅ Check if User is Customer
+export function isItCustomer(req) {
+  return req.user && req.user.role === "Customer";
 }

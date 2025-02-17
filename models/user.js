@@ -47,3 +47,6 @@ export default User;
 // "email": "admin@admin.com",
 
 // "password": "secret123", Admin Login
+
+// "email": "emma.wilson@example.com",
+//"password": "secret456" (customer)

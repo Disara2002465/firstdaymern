@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import cors from "cors";
 import reviewRouter from "./routes/reviewRouter.js";
+import inquiryRouter from "./routes/inquiryRouter.js";
 
 dotenv.config();
 
@@ -27,25 +28,24 @@ app.use((req, res, next) => {
         return res.status(401).json({ error: "Invalid token" });
       }
       req.user = decoded;
-      next();
     });
-  } else {
-    next();
   }
+  next(); // ✅ Ensure `next()` is always called
 });
 
 // ✅ MongoDB Connection with Error Handling
-const mongoUrl = process.env.MONGO_URL;
+const mongoUrl = process.env.MONGO_URL || "your-default-mongodb-url";
 
 mongoose
-  .connect(mongoUrl)
-  .then(() => console.log("MongoDB is connected successfully"))
-  .catch((error) => console.log("MongoDB connection failed:", error));
+  .connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ MongoDB is connected successfully"))
+  .catch((error) => console.error("❌ MongoDB connection failed:", error));
 
 // ✅ Define Routes
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/inquiries", inquiryRouter);
 
 // ✅ Global Error Handling Middleware
 app.use((err, req, res, next) => {
@@ -55,6 +55,4 @@ app.use((err, req, res, next) => {
 
 // ✅ Start Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
