@@ -1,13 +1,10 @@
 import Product from "../models/product.js";
+import { isItAdmin as isAdmin } from "./userController.js";
 
 // ✅ Add Product
 export async function addProducts(req, res) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Please log in and try again" });
-    }
-
-    if (req.user.role !== "Admin") {
+    if (!isAdmin(req)) {
       return res.status(403).json({
         message: "You are not authorized to perform this action",
       });
@@ -22,6 +19,7 @@ export async function addProducts(req, res) {
       product: newProduct,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       error: "Product registration failed",
       details: error.message,
@@ -76,6 +74,7 @@ export async function updateProduct(req, res) {
     });
   }
 }
+
 export async function deleteProduct(req, res) {
   try {
     if (isAdmin(req)) {
@@ -95,9 +94,23 @@ export async function deleteProduct(req, res) {
       message: "Failed to delete product",
     });
   }
+}
 
-  // ✅ Check Admin Role
-  function isAdmin(req) {
-    return req.user && req.user.role === "Admin";
+export async function getProductByKey(req, res) {
+  try {
+    const key = req.params.key;
+    const product = await Product.findOne({ key: key });
+    if (product == null) {
+      res.status(404).json({
+        message: "Product not found",
+      });
+      return;
+    }
+    res.json(product);
+    return;
+  } catch (e) {
+    res.status(500).json({
+      message: "Failed to get product",
+    });
   }
 }

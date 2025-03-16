@@ -80,12 +80,12 @@ export async function loginUser(req, res) {
         phone: user.phone,
       },
       process.env.JWT_SECRET, // ✅ Use environment variable
-      { expiresIn: "1h" }
+      { expiresIn: "4h" }
     );
 
     res
       .status(200)
-      .json({ message: "Login successful", token: token, role: user.user });
+      .json({ message: "Login successful", token: token, user: user });
   } catch (error) {
     res.status(500).json({ error: "Login failed", details: error.message });
   }

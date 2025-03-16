@@ -18,7 +18,7 @@ const productSchema = new mongoose.Schema({
   },
 
   category: {
-    type: String,
+    type: [String],
     required: true,
     default: "uncategorized",
   },
@@ -38,7 +38,7 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: true,
   },
-  category: {
+  image: {
     type: [String],
     required: true,
     default: "https://www.shutterstock.com/search/default-profile-image",

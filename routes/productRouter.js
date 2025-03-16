@@ -3,7 +3,8 @@ import {
   addProducts,
   getProducts,
   updateProduct,
-  deleteProduct, // ✅ Added missing import
+  deleteProduct,
+  getProductByKey,
 } from "../controllers/productController.js";
 
 const productRouter = express.Router();
@@ -12,7 +13,8 @@ const productRouter = express.Router();
 productRouter.post("/", addProducts);
 productRouter.get("/", getProducts);
 productRouter.put("/:key", updateProduct);
-productRouter.delete("/:key", deleteProduct); // ✅ Now properly imported
+productRouter.delete("/:key", deleteProduct);
+productRouter.get("/:key", getProductByKey);
 
 // Correct export
 export default productRouter;
