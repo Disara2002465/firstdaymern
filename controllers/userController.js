@@ -36,13 +36,14 @@ export async function registerUser(req, res) {
     // Generate JWT Token
     const token = jwt.sign(
       {
+        id: newUser._id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         email: newUser.email,
         role: newUser.role,
         phone: newUser.phone,
       },
-      process.env.JWT_SECRET, // ✅ Use environment variable
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
@@ -63,6 +64,11 @@ export async function loginUser(req, res) {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    if (user.isBlocked) {
+      return res
+        .status(403)
+        .json({ error: "Your account is blocked. Please contact the admin." });
+    }
 
     // Compare passwords
     const isPasswordCorrect = bcrypt.compareSync(password, user.password);
@@ -73,21 +79,37 @@ export async function loginUser(req, res) {
     // Generate JWT Token
     const token = jwt.sign(
       {
+        id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         role: user.role,
         phone: user.phone,
       },
-      process.env.JWT_SECRET, // ✅ Use environment variable
+      process.env.JWT_SECRET,
       { expiresIn: "4h" }
     );
 
-    res
-      .status(200)
-      .json({ message: "Login successful", token: token, user: user });
+    res.status(200).json({ message: "Login successful", token, user });
   } catch (error) {
     res.status(500).json({ error: "Login failed", details: error.message });
+  }
+}
+
+// ✅ Middleware to Verify Token
+export function authenticateUser(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Access Denied. No token provided." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(403).json({ error: "Invalid Token" });
   }
 }
 
@@ -99,4 +121,55 @@ export function isItAdmin(req) {
 // ✅ Check if User is Customer
 export function isItCustomer(req) {
   return req.user && req.user.role === "Customer";
+}
+
+// ✅ Get All Users (Admin Only)
+export async function getAllUsers(req, res) {
+  if (!req.user || !isItAdmin(req)) {
+    return res.status(403).json({ error: "Unauthorized access" });
+  }
+
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to get users", details: error.message });
+  }
+}
+
+// ✅ Block or Unblock User (Admin Only)
+export async function blockOrUnblockUser(req, res) {
+  const email = req.params.email;
+
+  if (!isItAdmin(req)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+
+    res.json({
+      message: "User blocked/unblocked successfully",
+      isBlocked: user.isBlocked,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to update user status", details: error.message });
+  }
+}
+export function getUser(req, res) {
+  if (req.user != null) {
+    res.json(req.user);
+  } else {
+    res.status(403).json({ error: "Unauthorized" });
+  }
 }
