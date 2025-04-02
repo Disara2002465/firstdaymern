@@ -2,8 +2,19 @@ import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-
+import nodemailer from "nodemailer";
+import OTP from "../models/otp.js";
 dotenv.config();
+const transport = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "disarahasandi575@gmail.com",
+    pass: "hmtd kvlq dfqs ymnt",
+  },
+});
 
 // ✅ Register User
 export async function registerUser(req, res) {
@@ -33,6 +44,7 @@ export async function registerUser(req, res) {
 
     await newUser.save();
 
+    sendOTP(newUser);
     // Generate JWT Token
     const token = jwt.sign(
       {
@@ -42,6 +54,7 @@ export async function registerUser(req, res) {
         email: newUser.email,
         role: newUser.role,
         phone: newUser.phone,
+        emailVerified: true,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
@@ -85,6 +98,7 @@ export async function loginUser(req, res) {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        emailVerified: user.emailVerified,
       },
       process.env.JWT_SECRET,
       { expiresIn: "4h" }
@@ -166,10 +180,77 @@ export async function blockOrUnblockUser(req, res) {
       .json({ error: "Failed to update user status", details: error.message });
   }
 }
+
 export function getUser(req, res) {
   if (req.user != null) {
     res.json(req.user);
   } else {
     res.status(403).json({ error: "Unauthorized" });
+  }
+}
+
+export async function sendOTP(req, res) {
+  if (req.user == null) {
+    res.status(403).json({ error: "Unauthorized" });
+    return;
+  }
+  //generate number between 1000 and 9999
+  const otp = Math.floor(Math.random() * 9000) + 1000;
+  //save otp in database
+  const newOTP = new OTP({
+    email: req.user.email,
+    otp: otp,
+  });
+  await newOTP.save();
+
+  const message = {
+    from: "disarahasandi575@gmail.com",
+    to: req.user.email,
+    subject: "Validating OTP",
+    text: "Your otp code is " + otp,
+  };
+
+  transport.sendMail(message, (err, info) => {
+    if (err) {
+      console.log(err);
+      res.status(500).json({ error: "Failed to send OTP" });
+    } else {
+      console.log(info);
+      res.json({ message: "OTP sent successfully" });
+    }
+  });
+}
+
+export async function verifyOTP(req, res) {
+  if (req.user == null) {
+    res.status(403).json({ error: "Unauthorized" });
+    return;
+  }
+  const code = req.body.code;
+
+  const otp = await OTP.findOne({
+    email: req.user.email,
+    otp: code,
+  });
+
+  if (otp == null) {
+    res.status(404).json({ error: "Invalid OTP" });
+    return;
+  } else {
+    await OTP.deleteOne({
+      email: req.user.email,
+      otp: code,
+    });
+
+    await User.updateOne(
+      {
+        email: req.user.email,
+      },
+      {
+        emailVerified: true,
+      }
+    );
+
+    res.status(200).json({ message: "Email verified successfully" });
   }
 }

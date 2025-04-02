@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: "https://www.shutterstock.com/search/default-profile-image",
     },
+    emailVerified: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   { timestamps: true } // Optional: Adds createdAt and updatedAt timestamps
 );

@@ -2,16 +2,27 @@ import express from "express";
 import {
   blockOrUnblockUser,
   getAllUsers,
+  getUser,
   loginUser,
   registerUser,
-  getUser,
+  sendOTP,
+  verifyOTP,
 } from "../controllers/userController.js";
 
-const router = express.Router();
-router.post("/login", loginUser);
-router.post("/register", registerUser);
-router.get("/all", getAllUsers);
-router.put("/block/:email", blockOrUnblockUser);
-router.get("/", getUser);
+const userRouter = express.Router();
 
-export default router;
+userRouter.post("/register", registerUser);
+
+userRouter.post("/login", loginUser);
+
+userRouter.get("/all", getAllUsers);
+
+userRouter.put("/block/:email", blockOrUnblockUser);
+
+userRouter.get("/sendOTP", sendOTP);
+
+userRouter.post("/verifyEmail", verifyOTP);
+
+userRouter.get("/", getUser);
+
+export default userRouter;
