@@ -3,150 +3,104 @@ import { isItAdmin, isItCustomer } from "./userController.js";
 
 export async function addInquiry(req, res) {
   try {
-    if (isItCustomer(req)) {
-      const data = req.body;
-      data.email = req.user.email;
-      data.phone = req.user.phone;
-
-      let id = 0;
-
-      const inquiries = await Inquiry.find().sort({ id: -1 }).limit(1);
-
-      if (inquiries.length == 0) {
-        id = 1;
-      } else {
-        id = inquiries[0].id + 1;
-      }
-
-      data.id = id;
-
-      const newInquiry = new Inquiry(data);
-      const response = await newInquiry.save();
-
-      res.json({
-        message: "Inquiry added successfully",
-        id: response.id,
-      });
+    if (!isItCustomer(req)) {
+      return res.status(403).json({ message: "Unauthorized" });
     }
-  } catch (e) {
-    res.status(500).json({
-      message: "Failed to add inquiry",
+
+    const data = req.body;
+    data.email = req.user.email;
+    data.phone = req.user.phone;
+
+    // Generate ID
+    const lastInquiry = await Inquiry.findOne().sort({ id: -1 });
+    const newId = lastInquiry ? lastInquiry.id + 1 : 1;
+    data.id = newId;
+
+    const newInquiry = new Inquiry(data);
+    const saved = await newInquiry.save();
+
+    return res.json({
+      message: "Inquiry added successfully",
+      id: saved.id,
     });
+  } catch (e) {
+    console.error("Add Inquiry Error:", e);
+    res.status(500).json({ message: "Failed to add inquiry" });
   }
 }
 
-//
 export async function getInquiries(req, res) {
   try {
     if (isItCustomer(req)) {
       const inquiries = await Inquiry.find({ email: req.user.email });
-      res.json(inquiries);
-      return;
-    } else if (isItAdmin(req)) {
-      const inquiries = await Inquiry.find();
-      res.json(inquiries);
-      return;
-    } else {
-      res.status(403).json({
-        message: "You are not authorized to perform this action",
-      });
-      return;
+      return res.json(inquiries);
     }
+
+    if (isItAdmin(req)) {
+      const inquiries = await Inquiry.find();
+      return res.json(inquiries);
+    }
+
+    return res.status(403).json({ message: "Unauthorized" });
   } catch (e) {
-    res.status(500).json({
-      message: "Failed to get inquiries",
-    });
+    console.error("Get Inquiries Error:", e);
+    res.status(500).json({ message: "Failed to get inquiries" });
   }
 }
 
 export async function deleteInquiry(req, res) {
   try {
-    if (isItAdmin(req)) {
-      const id = req.params.id;
+    const { id } = req.params;
 
-      await Inquiry.deleteOne({ id: id });
-      res.json({
-        message: "Inquiry deleted successfully",
-      });
-      return;
-    } else if (isItCustomer(req)) {
-      const id = req.params.id;
+    const inquiry = await Inquiry.findOne({ id });
 
-      const inquiry = await Inquiry.findOne({ id: id });
-      if (inquiry == null) {
-        res.status(404).json({
-          message: "Inquiry not found",
-        });
-        return;
-      } else {
-        if (inquiry.email == req.user.email) {
-          await Inquiry.deleteOne({ id: id });
-          res.json({
-            message: "Inquiry deleted successfully",
-          });
-          return;
-        } else {
-          res.status(403).json({
-            message: "You are not authorized to perform this action",
-          });
-          return;
-        }
-      }
-    } else {
-      res.status(403).json({
-        message: "You are not authorized to perform this action",
-      });
-      return;
+    if (!inquiry) {
+      return res.status(404).json({ message: "Inquiry not found" });
     }
+
+    // Admins can delete any
+    if (isItAdmin(req)) {
+      await Inquiry.deleteOne({ id });
+      return res.json({ message: "Inquiry deleted successfully" });
+    }
+
+    // Customers can only delete their own
+    if (isItCustomer(req) && inquiry.email === req.user.email) {
+      await Inquiry.deleteOne({ id });
+      return res.json({ message: "Inquiry deleted successfully" });
+    }
+
+    return res.status(403).json({ message: "Unauthorized" });
   } catch (e) {
-    res.status(500).json({
-      message: "Failed to delete inquiry",
-    });
+    console.error("Delete Inquiry Error:", e);
+    res.status(500).json({ message: "Failed to delete inquiry" });
   }
 }
 
 export async function updateInquiry(req, res) {
   try {
-    if (isItAdmin(req)) {
-      const id = req.params.id;
-      const data = req.body;
+    const { id } = req.params;
+    const { message } = req.body;
 
-      await Inquiry.updateOne({ id: id }, data);
-      res.json({
-        message: "Inquiry updated successfully",
-      });
-    } else if (isItCustomer(req)) {
-      const id = req.params.id;
-      const data = req.body;
+    const inquiry = await Inquiry.findOne({ id });
 
-      const inquiry = await Inquiry.findOne({ id: id });
-      if (inquiry == null) {
-        res.status(404).json({
-          message: "Inquiry not found",
-        });
-        return;
-      } else {
-        if (inquiry.email == req.user.email) {
-          await Inquiry.updateOne({ id: id }, { message: data.message });
-          res.json({
-            message: "Inquiry updated successfully",
-          });
-          return;
-        } else {
-          res.status(403).json({
-            message: "You are not authorized to perform this action",
-          });
-          return;
-        }
-      }
-    } else {
-      res.status(403).json({
-        message: "You are not authorized to perform this action",
-      });
+    if (!inquiry) {
+      return res.status(404).json({ message: "Inquiry not found" });
     }
+
+    if (isItAdmin(req)) {
+      await Inquiry.updateOne({ id }, req.body);
+      return res.json({ message: "Inquiry updated successfully" });
+    }
+
+    if (isItCustomer(req) && inquiry.email === req.user.email) {
+      await Inquiry.updateOne({ id }, { message });
+      return res.json({ message: "Inquiry updated successfully" });
+    }
+
+    return res.status(403).json({ message: "Unauthorized" });
   } catch (e) {
-    res.status(500).json({
-      message: "Failed to update inquiry",
-    });
+    console.error("Update Inquiry Error:", e);
+    res.status(500).json({ message: "Failed to update inquiry" });
   }
 }
