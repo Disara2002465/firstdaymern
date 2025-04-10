@@ -12,7 +12,7 @@ const transport = nodemailer.createTransport({
   secure: false,
   auth: {
     user: "disarahasandi575@gmail.com",
-    pass: "hmtd kvlq dfqs ymnt",
+    pass: "uvyn aomc yrsl icgo",
   },
 });
 
@@ -44,7 +44,7 @@ export async function registerUser(req, res) {
 
     await newUser.save();
 
-    sendOTP(newUser);
+    sendOTP(newUser, undefined);
     // Generate JWT Token
     const token = jwt.sign(
       {
