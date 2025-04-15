@@ -7,6 +7,7 @@ import {
   registerUser,
   sendOTP,
   verifyOTP,
+  loginWithGoogle,
 } from "../controllers/userController.js";
 
 const userRouter = express.Router();
@@ -22,6 +23,7 @@ userRouter.put("/block/:email", blockOrUnblockUser);
 userRouter.get("/sendOTP", sendOTP);
 
 userRouter.post("/verifyEmail", verifyOTP);
+userRouter.post("/google", loginWithGoogle);
 
 userRouter.get("/", getUser);
 
